@@ -10,10 +10,24 @@ interface RouterProps {
 const DashboardScreen = ({navigation}: RouterProps) => {
   return (
     <View style={styles.container}>
-      <Text>Hello User! </Text>
+      <Text>Hello User! Putting text here to test</Text>
       <Button onPress = {() => FIREBASE_AUTH.signOut()} title="Logout"></Button>
     </View>
   )
+}
+
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import ExploreScreen from './ExploreScreen';
+
+const Tab = createBottomTabNavigator();
+
+function MyTabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Home" component={DashboardScreen} />
+      <Tab.Screen name="Explore" component={ExploreScreen} />
+    </Tab.Navigator>
+  );
 }
 
 export default DashboardScreen
