@@ -1,39 +1,51 @@
 import { ActivityIndicator, StyleSheet, TextInput, View, Button, Text, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
-import { FIREBASE_AUTH } from '../../firebaseConfig';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebaseConfig'; // Import Firestore
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore'; // Import setDoc and doc for Firestore operations
 import { useNavigation } from '@react-navigation/native';
-import LoginScreen from './LoginScreen';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();  
+  const navigation = useNavigation();
 
   const auth = FIREBASE_AUTH;
 
-  //A function to validate all the fields to check if they are filled or not 
+  // A function to validate all the fields to check if they are filled or not 
   const validateFields = () => {
-    if (!email || !password) {
+    if (!email || !password || !name) {
       alert('Please fill in all the fields');
       return false;
     }
     return true;
   };
 
-  //A function to handle registration
+  // A function to handle registration
   const signUp = async () => {
     if (!validateFields()) return;
     setLoading(true);
     try {
+      // Step 1: Create user in Firebase Authentication
       const response = await createUserWithEmailAndPassword(auth, email, password);
-      console.log(response);
+      const user = response.user; // Firebase user object
+
+      // Step 2: Save user data to Firestore
+      const userRef = doc(FIREBASE_DB, "users", user.uid);  // Reference to Firestore document (use UID as document ID)
+      await setDoc(userRef, {
+        name: name,
+        email: email,
+        swappeditems: 0,
+        favourites: [], 
+        profilePicture: null,  // Placeholder for profile picture, can be updated later
+      });
+
+      console.log('Account Created and Data Saved in Firestore!');
       alert('Account Created! Please sign in.');
-      navigation.navigate('Login'); 
-    } catch (error: any) {
-      alert('Sign up failed: ' + error.message);
+    } catch (error) {
+      alert(error);
     } finally {
       setLoading(false);
     }
@@ -50,13 +62,11 @@ const RegisterScreen = () => {
       ) : (
         <>
           <View style={styles.buttonContainer}>
-            <Button title="Register" onPress = {signUp}/>
+            <Button title="Register" onPress={signUp} />
           </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style = {styles.textButton}> 
-                Already have an account? Sign in
-              </Text>
+              <Text style={styles.textButton}>Already have an account? Sign in</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -79,10 +89,10 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   buttonContainer: {
-    marginVertical: 5, 
+    marginVertical: 5,
   },
   textButton: {
-    color: 'blue', 
+    color: 'blue',
     marginTop: 10,
     fontSize: 16,
     textDecorationLine: 'underline',

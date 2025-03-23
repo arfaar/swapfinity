@@ -8,6 +8,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { FIREBASE_AUTH } from "@/firebaseConfig";
 import MyTabs from "./screens/BottomNavigation";
+import FavouritesScreen from "./screens/FavouritesScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -23,9 +24,10 @@ export default function Index() {
 
   return (
       <Stack.Navigator initialRouteName="Login">
-        {user? ( <Stack.Screen name="Home" component={MyTabs} options={{ headerShown: false }} />)
+        {user? ( <Stack.Screen name="Home" component={MyTabs} options={{ headerShown: false }} /> )
          : (<Stack.Screen name="Login" component={LoginScreen} options = {{headerShown: false}} />)}
         <Stack.Screen name="Registration" component={RegistrationScreen} options = {{headerShown: false}} />
+        <Stack.Screen name="Favorites" component={FavouritesScreen} />
       </Stack.Navigator>
   );
 }
