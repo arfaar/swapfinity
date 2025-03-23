@@ -1,8 +1,9 @@
-import { ActivityIndicator, StyleSheet, TextInput, View, Button } from 'react-native'
+import { ActivityIndicator, StyleSheet, TextInput, Text, View, Button, TouchableOpacity } from 'react-native'
 import React, {useState} from 'react'
 import { FIREBASE_AUTH } from '../../firebaseConfig'
 import {signInWithEmailAndPassword} from 'firebase/auth';
 import {createUserWithEmailAndPassword} from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
   //Adding the variables to be handled
@@ -10,11 +11,24 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  //For navigation to Registration Screen - React Hook for navigation! 
+  const navigation = useNavigation();
+
   //Firebase authentication instance
   const auth = FIREBASE_AUTH;
 
+  //A function to validate all the fields to check if they are filled or not 
+  const validateFields = () => {
+    if (!email || !password) {
+      alert('Error - Please fill all fields');
+      return false;
+    }
+    return true;
+  };
+
   //A function to handle sign in 
   const signIn = async () => {
+    if (!validateFields()) return;
     setLoading(true);
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
@@ -23,20 +37,6 @@ const LoginScreen = () => {
     } catch (error: any) {
       alert('Sign in failed:' + error.message)
     }finally{
-      setLoading(false);
-    }
-  }
-
-  //A funtion to handle sign up
-  const signUp = async () => {
-    setLoading(true);
-    try {
-      const response = await createUserWithEmailAndPassword(auth, email, password);
-      console.log(response)
-      alert('Check your emails!');
-    } catch (error: any) {
-      alert('Sign up failed:' + error.message)
-    } finally {
       setLoading(false);
     }
   }
@@ -51,8 +51,16 @@ const LoginScreen = () => {
 
       ) : (
         <>
+        <View style={styles.buttonContainer}>
           <Button title="Login" onPress = {signIn}/>
-          <Button title="Create an Account" onPress = {signUp}/>
+          </View>
+          <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
+            <Text style = {styles.textButton}> 
+              Don't have an account? Sign Up
+            </Text>
+          </TouchableOpacity>
+          </View>
         </>
       )}
     </View>
@@ -68,10 +76,19 @@ const styles = StyleSheet.create({
   input: {
     marginVertical: 4,
     height: 50,
-    borderWidth: 4,
+    borderWidth: 2,
     borderRadius: 4,
     padding: 10,
-  }
+  }, 
+  buttonContainer: {
+    marginVertical: 5,  
+  },
+  textButton: {
+    color: 'blue', 
+    marginTop: 10,
+    fontSize: 16,
+    textDecorationLine: 'underline',
+  },
 })
 
 export default LoginScreen
