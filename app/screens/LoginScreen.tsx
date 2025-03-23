@@ -33,7 +33,7 @@ const LoginScreen = () => {
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
       console.log(response);
-      alert('Signed In');
+      navigation.navigate('Dashboard')
     } catch (error: any) {
       alert('Sign in failed:' + error.message)
     }finally{

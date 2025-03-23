@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
+import LoginScreen from './LoginScreen';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
