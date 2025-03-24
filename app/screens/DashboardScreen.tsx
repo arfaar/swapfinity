@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -57,7 +57,7 @@ const DashboardScreen: React.FC = () => {
     }
   };
 
-  const handleAddToFavorites = async (itemId: string) => {
+  const handleToggleFavorite = async (itemId: string) => {
     if (!userId) {
       Alert.alert("Error", "You need to be logged in to favorite items.");
       return;
@@ -65,21 +65,42 @@ const DashboardScreen: React.FC = () => {
 
     try {
       const userRef = doc(FIREBASE_DB, "users", userId);
-      await updateDoc(userRef, {
-        favorites: arrayUnion(itemId),
-      });
+      const userSnap = await getDoc(userRef);
 
-      // Update local state to reflect UI change immediately
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, isFavorited: true } : item
-        )
-      );
+      if (userSnap.exists()) {
+        const userFavorites: string[] = userSnap.data().favorites || [];
 
-      Alert.alert("Success", "Item added to favorites!");
+        // If item is already favorited, remove it from favorites
+        if (userFavorites.includes(itemId)) {
+          await updateDoc(userRef, {
+            favorites: arrayRemove(itemId),
+          });
+
+          setItems((prevItems) =>
+            prevItems.map((item) =>
+              item.id === itemId ? { ...item, isFavorited: false } : item
+            )
+          );
+
+          Alert.alert("Removed", "Item removed from favorites.");
+        } else {
+          // Add item to favorites
+          await updateDoc(userRef, {
+            favorites: arrayUnion(itemId),
+          });
+
+          setItems((prevItems) =>
+            prevItems.map((item) =>
+              item.id === itemId ? { ...item, isFavorited: true } : item
+            )
+          );
+
+          Alert.alert("Success", "Item added to favorites!");
+        }
+      }
     } catch (error) {
-      console.error("Error adding to favorites:", error);
-      Alert.alert("Error", "Failed to add item to favorites.");
+      console.error("Error updating favorites:", error);
+      Alert.alert("Error", "Failed to update favorites.");
     }
   };
 
@@ -120,7 +141,7 @@ const DashboardScreen: React.FC = () => {
                   styles.favoriteButton,
                   item.isFavorited && { backgroundColor: "green" },
                 ]}
-                onPress={() => handleAddToFavorites(item.id)}
+                onPress={() => handleToggleFavorite(item.id)}
               >
                 <Ionicons
                   name={item.isFavorited ? "heart" : "heart-outline"}
