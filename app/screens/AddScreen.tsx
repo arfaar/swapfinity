@@ -1,32 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
+import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
-import { FIREBASE_DB } from "../../firebaseConfig";
-import { addDoc, collection } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
-// Add screen component
 const AddScreen = ({ navigation }: any) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [whatTheyAreLookingFor, setWhatTheyAreLookingFor] = useState("");
   const [image, setImage] = useState<string | null>(null);
+  const [userName, setUserName] = useState("Anonymous");
+  const [userProfilePic, setUserProfilePic] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Request media library permission
+  const auth = getAuth(); // Get Firebase Auth instance
+
+  // Check for logged-in user and fetch their details
   useEffect(() => {
-    const requestPermissions = async () => {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Required",
-          "We need permission to access your photo library to select an image."
-        );
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid); // Save user ID
+        const userRef = doc(FIREBASE_DB, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          setUserName(userData.name || "Anonymous");
+          setUserProfilePic(userData.profilePicture || null);
+        }
+      } else {
+        setUserId(null);
+        setUserName("Anon");
+        setUserProfilePic(null);
       }
-    };
-    requestPermissions();
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Function to pick an image from the gallery
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -40,30 +52,29 @@ const AddScreen = ({ navigation }: any) => {
     }
   };
 
-  // Function to handle posting the item
   const handlePost = async () => {
-    if (!title || !description || !whatTheyAreLookingFor || !image) {
-      Alert.alert("Error", "Please fill in all fields and select an image.");
+    if (!title || !description || !whatTheyAreLookingFor || !image || !userId) {
+      Alert.alert("Error", "Please fill in all fields, select an image, and ensure you're logged in.");
       return;
     }
 
     try {
-      // Add item to Firestore
       await addDoc(collection(FIREBASE_DB, "items"), {
         title,
         description,
         whatTheyAreLookingFor,
         image,
         postedAt: new Date(),
+        userId, // Store user ID
+        userName, // Store user's name
+        userProfilePic, // Store user's profile picture
       });
 
-      // Reset form fields after posting
       setTitle("");
       setDescription("");
       setWhatTheyAreLookingFor("");
       setImage(null);
 
-      // Navigate to dashboard (or wherever you want)
       navigation.navigate("Dashboard");
       Alert.alert("Success", "Item posted successfully!");
     } catch (error) {
@@ -74,44 +85,20 @@ const AddScreen = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      {/* Title Field */}
       <Text style={styles.label}>Title:</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="Enter title of your item"
-      />
+      <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Enter title" />
 
-      {/* Image Picker */}
       <Text style={styles.label}>Image:</Text>
       <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.imagePreview} />
-        ) : (
-          <Ionicons name="image-outline" size={40} color="gray" />
-        )}
+        {image ? <Image source={{ uri: image }} style={styles.imagePreview} /> : <Ionicons name="image-outline" size={40} color="gray" />}
       </TouchableOpacity>
 
-      {/* Description Field */}
       <Text style={styles.label}>Description:</Text>
-      <TextInput
-        style={styles.input}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Describe the item you're swapping"
-      />
+      <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder="Describe your item" />
 
-      {/* What They Are Looking For */}
       <Text style={styles.label}>What are you looking for?</Text>
-      <TextInput
-        style={styles.input}
-        value={whatTheyAreLookingFor}
-        onChangeText={setWhatTheyAreLookingFor}
-        placeholder="What do you want in exchange?"
-      />
+      <TextInput style={styles.input} value={whatTheyAreLookingFor} onChangeText={setWhatTheyAreLookingFor} placeholder="Desired swap item" />
 
-      {/* Post Button */}
       <TouchableOpacity style={styles.postButton} onPress={handlePost}>
         <Text style={styles.postButtonText}>Post Item</Text>
       </TouchableOpacity>
