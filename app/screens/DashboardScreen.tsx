@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,6 +11,7 @@ interface Item {
   title: string;
   image: string;
   description: string;
+  userId: string; // Add userId field to identify who posted
   userName?: string;
   userProfilePic?: string;
   whatTheyAreLookingFor?: string;
@@ -104,6 +105,44 @@ const DashboardScreen: React.FC = () => {
     }
   };
 
+  const handleDeletePost = async (itemId: string) => {
+    // Show confirmation dialog
+    Alert.alert(
+      "Confirm Deletion", // Title of the alert
+      "Are you sure you want to delete this post?", // Message
+      [
+        {
+          text: "Cancel", // Cancel button
+          onPress: () => console.log("Deletion canceled"), // Do nothing on cancel
+          style: "cancel", // Style for the cancel button
+        },
+        {
+          text: "Delete", // Confirm delete button
+          onPress: async () => {
+            try {
+              // Perform delete operation (assuming Firestore)
+              const itemRef = doc(FIREBASE_DB, "items", itemId);
+              await deleteDoc(itemRef); // Deleting the post from Firestore
+  
+              // Update local state or navigate if needed
+              setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+              Alert.alert("Success", "Post deleted successfully!"); // Confirmation message after deletion
+            } catch (error) {
+              console.error("Error deleting post:", error);
+              Alert.alert("Error", "Failed to delete the post.");
+            }
+          },
+        },
+      ],
+      { cancelable: true } // The alert box can be dismissed by tapping outside it
+    );
+  };
+  
+  const handleEditPost = (itemId: string) => {
+    // Navigate to the edit screen or open an edit modal (not implemented here)
+    Alert.alert("Edit Post", "Navigate to edit screen (not implemented).");
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -136,30 +175,48 @@ const DashboardScreen: React.FC = () => {
 
             {/* Buttons */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.favoriteButton,
-                  item.isFavorited && { backgroundColor: "green" },
-                ]}
-                onPress={() => handleToggleFavorite(item.id)}
-              >
-                <Ionicons
-                  name={item.isFavorited ? "heart" : "heart-outline"}
-                  size={20}
-                  color="white"
-                />
-                <Text style={styles.buttonText}>
-                  {item.isFavorited ? "Added to Favorites" : "Favorite"}
-                </Text>
-              </TouchableOpacity>
+              {item.userId === userId ? (
+                // Show edit and delete buttons only for the user's own posts
+                <View style={styles.editDeleteButtons}>
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => handleEditPost(item.id)}
+                  >
+                    <Ionicons name="pencil" size={20} color="white" />
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.swapButton}
-                onPress={() => Alert.alert("Swap Request Sent", "Feature coming soon!")}
-              >
-                <Ionicons name="swap-horizontal" size={20} color="white" />
-                <Text style={styles.buttonText}>Swap Request</Text>
-              </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => handleDeletePost(item.id)}
+                  >
+                    <Ionicons name="trash" size={20} color="white" />
+                    <Text style={styles.buttonText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={[styles.favoriteButton, item.isFavorited ? styles.favorited : styles.notFavorited]}
+                    onPress={() => handleToggleFavorite(item.id)}
+                  >
+                    <Ionicons
+                      name={item.isFavorited ? "heart" : "heart-outline"}
+                      size={20}
+                      color="white"
+                    />
+                    <Text style={styles.buttonText}>{item.isFavorited ? "Added to favorites" : "Add to favorites"}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.swapButton}
+                    onPress={() => Alert.alert("Swap Request Sent", "Feature coming soon!")}
+                  >
+                    <Ionicons name="swap-horizontal" size={20} color="white" />
+                    <Text style={styles.buttonText}>Swap Request</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         )}
@@ -213,43 +270,68 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: "#555",
-    marginBottom: 5,
+    color: "#333",
+    marginBottom: 10,
   },
   swapText: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#333",
+    color: "#666",
+    marginBottom: 15,
   },
   highlight: {
+    fontWeight: "bold",
     color: "#007bff",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
+    alignItems: "center",
   },
   favoriteButton: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ff4757",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    padding: 10,
     borderRadius: 5,
+    alignItems: "center",
+    flex: 1,
+    marginHorizontal: 5,
+    justifyContent: "center",
+  },
+  favorited: {
+    backgroundColor: "green",
+  },
+  notFavorited: {
+    backgroundColor: "red",
   },
   swapButton: {
     flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#007bff",
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    padding: 10,
     borderRadius: 5,
+    alignItems: "center",
+    flex: 1,
+    marginHorizontal: 5,
+    justifyContent: "center",
+  },
+  button: {
+    flexDirection: "row",
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
+    flex: 1, // Makes the buttons take full width
+    marginHorizontal: 5, // Tiny margin between buttons
+    justifyContent: "center", // Center the content inside the button
+  },
+  editDeleteButtons: {
+    flexDirection: "row",
+    justifyContent: "center", // Center buttons horizontally
+    alignItems: "center",
+    width: "100%", // Ensure the buttons take full width
   },
   buttonText: {
     color: "white",
     marginLeft: 5,
     fontSize: 14,
-    fontWeight: "bold",
   },
 });
 
