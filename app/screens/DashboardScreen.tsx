@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot } from "firebase/firestore";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,36 +28,36 @@ const DashboardScreen: React.FC = () => {
       setUserId(auth.currentUser.uid);
     }
 
-    fetchItems();
-  }, [userId]); // Fetch items when userId changes
-
-  const fetchItems = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(FIREBASE_DB, "items"));
+    // Real-time listener for items
+    const unsubscribe = onSnapshot(collection(FIREBASE_DB, "items"), (querySnapshot) => {
       let itemsList: Item[] = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as Item[];
 
-      // Fetch user's favorites from Firestore
+      // Fetch user's favorites from Firestore and reflect that in the items list
       if (userId) {
         const userRef = doc(FIREBASE_DB, "users", userId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userFavorites: string[] = userSnap.data().favorites || [];
-          itemsList = itemsList.map((item) => ({
-            ...item,
-            isFavorited: userFavorites.includes(item.id),
-          }));
-        }
+        getDoc(userRef).then((userSnap) => {
+          if (userSnap.exists()) {
+            const userFavorites: string[] = userSnap.data().favorites || [];
+            itemsList = itemsList.map((item) => ({
+              ...item,
+              isFavorited: userFavorites.includes(item.id),
+            }));
+          }
+          setItems(itemsList);
+        });
+      } else {
+        setItems(itemsList);
       }
+    });
 
-      setItems(itemsList);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-    }
-  };
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, [userId]); // Re-run the effect when userId changes
 
+  // Handle Toggle Favorite functionality
   const handleToggleFavorite = async (itemId: string) => {
     if (!userId) {
       Alert.alert("Error", "You need to be logged in to favorite items.");
@@ -105,41 +105,32 @@ const DashboardScreen: React.FC = () => {
     }
   };
 
+  // Handle Delete Post
   const handleDeletePost = async (itemId: string) => {
-    // Show confirmation dialog
-    Alert.alert(
-      "Confirm Deletion", // Title of the alert
-      "Are you sure you want to delete this post?", // Message
-      [
-        {
-          text: "Cancel", // Cancel button
-          onPress: () => console.log("Deletion canceled"), // Do nothing on cancel
-          style: "cancel", // Style for the cancel button
+    Alert.alert("Confirm Deletion", "Are you sure you want to delete this post?", [
+      {
+        text: "Cancel",
+        onPress: () => console.log("Deletion canceled"),
+        style: "cancel",
+      },
+      {
+        text: "Delete",
+        onPress: async () => {
+          try {
+            const itemRef = doc(FIREBASE_DB, "items", itemId);
+            await deleteDoc(itemRef);
+            setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+            Alert.alert("Success", "Post deleted successfully!");
+          } catch (error) {
+            console.error("Error deleting post:", error);
+            Alert.alert("Error", "Failed to delete the post.");
+          }
         },
-        {
-          text: "Delete", // Confirm delete button
-          onPress: async () => {
-            try {
-              // Perform delete operation (assuming Firestore)
-              const itemRef = doc(FIREBASE_DB, "items", itemId);
-              await deleteDoc(itemRef); // Deleting the post from Firestore
-  
-              // Update local state or navigate if needed
-              setItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
-              Alert.alert("Success", "Post deleted successfully!"); // Confirmation message after deletion
-            } catch (error) {
-              console.error("Error deleting post:", error);
-              Alert.alert("Error", "Failed to delete the post.");
-            }
-          },
-        },
-      ],
-      { cancelable: true } // The alert box can be dismissed by tapping outside it
-    );
+      },
+    ]);
   };
-  
+
   const handleEditPost = (itemId: string) => {
-    // Navigate to the edit screen or open an edit modal (not implemented here)
     Alert.alert("Edit Post", "Navigate to edit screen (not implemented).");
   };
 
@@ -176,7 +167,6 @@ const DashboardScreen: React.FC = () => {
             {/* Buttons */}
             <View style={styles.buttonContainer}>
               {item.userId === userId ? (
-                // Show edit and delete buttons only for the user's own posts
                 <View style={styles.editDeleteButtons}>
                   <TouchableOpacity
                     style={styles.button}
@@ -318,15 +308,15 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     alignItems: "center",
-    flex: 1, // Makes the buttons take full width
-    marginHorizontal: 5, // Tiny margin between buttons
-    justifyContent: "center", // Center the content inside the button
+    flex: 1,
+    marginHorizontal: 5,
+    justifyContent: "center",
   },
   editDeleteButtons: {
     flexDirection: "row",
-    justifyContent: "center", // Center buttons horizontally
+    justifyContent: "center",
     alignItems: "center",
-    width: "100%", // Ensure the buttons take full width
+    width: "100%",
   },
   buttonText: {
     color: "white",
