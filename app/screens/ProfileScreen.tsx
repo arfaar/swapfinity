@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } fro
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { FIREBASE_AUTH, FIREBASE_DB } from "../../firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 
 // Reauthentication function
@@ -35,8 +35,8 @@ const ProfileScreen = ({ navigation }: any) => {
   // Fetch user data from Firestore
   useEffect(() => {
     if (userRef) {
-      const fetchUserData = async () => {
-        const docSnap = await getDoc(userRef);
+      // Listen for changes in user data in real-time
+      const unsubscribe = onSnapshot(userRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           console.log("Fetched user data:", data);
@@ -47,8 +47,10 @@ const ProfileScreen = ({ navigation }: any) => {
         } else {
           console.log("No user data found in Firestore");
         }
-      };
-      fetchUserData();
+      });
+
+      // Clean up the listener when the component unmounts
+      return () => unsubscribe();
     }
   }, [user]);
 
