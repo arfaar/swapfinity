@@ -1,34 +1,53 @@
-import { Text, View, StyleSheet, registerCallableModule, Image } from "react-native";
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState } from "react";
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from './screens/LoginScreen'
-import RegistrationScreen from './screens/RegistrationScreen'
-import DashboardScreen from "./screens/DashboardScreen";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { useEffect, useState } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { FIREBASE_AUTH } from "@/firebaseConfig";
+
+// Screens
+import LoginScreen from './screens/LoginScreen';
+import RegistrationScreen from './screens/RegistrationScreen';
 import MyTabs from "./screens/BottomNavigation";
 import FavouritesScreen from "./screens/FavouritesScreen";
+import { ActivityIndicator, View } from "react-native";
 
-const Stack = createNativeStackNavigator();
+// Define stack parameters
+export type RootStackParamList = {
+  Login: undefined;
+  Registration: undefined;
+  Home: undefined;
+  Favorites: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function Index() {
-  const[user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // State to track loading state
 
   useEffect(() => {
-     onAuthStateChanged(FIREBASE_AUTH, (user) => {
-      console.log('user', user);
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
       setUser(user);
+      setLoading(false); // Set loading to false once auth state is determined
     });
-  }, [])
+
+    return unsubscribe; // Clean up the listener
+  }, []);
+
+  // Show a loading screen until Firebase auth state is resolved
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
 
   return (
-      <Stack.Navigator initialRouteName="Login">
-        {user? ( <Stack.Screen name="Home" component={MyTabs} options={{ headerShown: false }} /> )
-         : (<Stack.Screen name="Login" component={LoginScreen} options = {{headerShown: false}} />)}
-        <Stack.Screen name="Registration" component={RegistrationScreen} options = {{headerShown: false}} />
-        <Stack.Screen name="Favorites" component={FavouritesScreen} />
-      </Stack.Navigator>
+    <Stack.Navigator initialRouteName={user ? "Home" : "Login"}>
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Registration" component={RegistrationScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Home" component={MyTabs} options={{ headerShown: false }} />
+      <Stack.Screen name="Favorites" component={FavouritesScreen} />
+    </Stack.Navigator>
   );
 }
-

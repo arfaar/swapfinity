@@ -1,51 +1,41 @@
-import { ActivityIndicator, StyleSheet, TextInput, View, Button, Text, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebaseConfig'; // Import Firestore
+import { ActivityIndicator, StyleSheet, TextInput, View, Button, Text, TouchableOpacity, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore'; // Import setDoc and doc for Firestore operations
-import { useNavigation } from '@react-navigation/native';
+import { setDoc, doc } from 'firebase/firestore';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebaseConfig';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../index'; 
 
-const RegisterScreen = () => {
+type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Registration'>;
+
+const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
-
   const auth = FIREBASE_AUTH;
 
-  // A function to validate all the fields to check if they are filled or not 
-  const validateFields = () => {
-    if (!email || !password || !name) {
-      alert('Please fill in all the fields');
-      return false;
-    }
-    return true;
-  };
-
-  // A function to handle registration
   const signUp = async () => {
-    if (!validateFields()) return;
+    if (!email || !password || !name) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Step 1: Create user in Firebase Authentication
       const response = await createUserWithEmailAndPassword(auth, email, password);
-      const user = response.user; // Firebase user object
-
-      // Step 2: Save user data to Firestore
-      const userRef = doc(FIREBASE_DB, "users", user.uid);  // Reference to Firestore document (use UID as document ID)
-      await setDoc(userRef, {
-        name: name,
-        email: email,
+      await setDoc(doc(FIREBASE_DB, 'users', response.user.uid), {
+        name,
+        email,
         swappeditems: 0,
-        favourites: [], 
-        profilePicture: null,  // Placeholder for profile picture, can be updated later
+        favourites: [],
+        profilePicture: null,
       });
 
-      console.log('Account Created and Data Saved in Firestore!');
-      alert('Account Created! Please sign in.');
-    } catch (error) {
-      alert(error);
+      Alert.alert('Success', 'Account Created! Please sign in.');
+      navigation.navigate('Login');
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -53,12 +43,12 @@ const RegisterScreen = () => {
 
   return (
     <View style={styles.container}>
-      <TextInput value={name} style={styles.input} placeholder="Name" onChangeText={(text) => setName(text)} />
-      <TextInput value={email} style={styles.input} placeholder="Email" autoCapitalize="none" onChangeText={(text) => setEmail(text)} />
-      <TextInput secureTextEntry value={password} style={styles.input} placeholder="Password" autoCapitalize="none" onChangeText={(text) => setPassword(text)} />
+      <TextInput value={name} style={styles.input} placeholder="Name" onChangeText={setName} />
+      <TextInput value={email} style={styles.input} placeholder="Email" autoCapitalize="none" onChangeText={setEmail} />
+      <TextInput secureTextEntry value={password} style={styles.input} placeholder="Password" autoCapitalize="none" onChangeText={setPassword} />
 
       {loading ? (
-        <ActivityIndicator size="large" color="0000ff" />
+        <ActivityIndicator size="large" color="blue" />
       ) : (
         <>
           <View style={styles.buttonContainer}>
