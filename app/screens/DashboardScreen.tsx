@@ -112,6 +112,9 @@ const DashboardScreen: React.FC = () => {
     // Extract the receiverID from the post
     const receiverId = postDoc.data()?.userId; // Assuming the field for the user ID in the post is `userId`
     console.log("receiverId:", receiverId);
+    const receiverName = postDoc.data()?.userName; // Assuming the field for the user ID in the post is `userId`
+    console.log("receiverName:", receiverName);
+    
 
     if (!receiverId) {
       Alert.alert("Error", "Receiver ID not found.");
@@ -130,22 +133,24 @@ const DashboardScreen: React.FC = () => {
       messageStatus: "unread", // Initial status is unread
       postID: itemId,
       receiverID: receiverId,
+      receiverName: receiverName,
       senderID: userId,
+      senderName:userName,
       swapStatus: "pending", // Initial swap status
       timestamp: timestamp,
     });
 
-      // const itemRef = doc(FIREBASE_DB, "items", itemId);
-      // await updateDoc(itemRef, {
-      //   swapRequested: true, // Mark that a swap request was sent
-      // });
+      const itemRef = doc(FIREBASE_DB, "items", itemId);
+      await updateDoc(itemRef, {
+        swapRequested: true, // Mark that a swap request was sent
+      });
 
-      // // Update item state locally
-      // setItems((prevItems) =>
-      //   prevItems.map((item) =>
-      //     item.id === itemId ? { ...item, swapRequested: true } : item
-      //   )
-      // );
+      // Update item state locally
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, swapRequested: true } : item
+        )
+      );
 
       Alert.alert("Swap Request Sent", "The swap request has been sent to the other user.");
     } catch (error) {
