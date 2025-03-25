@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert, TextInput, Modal } from "react-native";
 import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot } from "firebase/firestore";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { getAuth } from "firebase/auth";
@@ -11,21 +11,34 @@ interface Item {
   title: string;
   image: string;
   description: string;
-  userId: string; // Add userId field to identify who posted
+  userId: string;
   userName?: string;
   userProfilePic?: string;
   whatTheyAreLookingFor?: string;
-  isFavorited?: boolean; // New property for UI update
+  isFavorited?: boolean;
 }
 
 const DashboardScreen: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null); // Store user name
+  const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false); // State for modal visibility
+  const [filterOption, setFilterOption] = useState<string>('all'); // Filter option (all, my posts, other posts)
 
   useEffect(() => {
     const auth = getAuth();
     if (auth.currentUser) {
-      setUserId(auth.currentUser.uid);
+      const userId = auth.currentUser.uid;
+      setUserId(userId);
+  
+      // Fetch the user's name from Firestore
+      const userRef = doc(FIREBASE_DB, "users", userId); // Reference to the user's document in Firestore
+      getDoc(userRef).then((userSnap) => {
+        if (userSnap.exists()) {
+          const userName = userSnap.data().name || "User"; // Fetch the name or default to "User"
+          setUserName(userName); // Set the username in state
+        }
+      });
     }
 
     // Real-time listener for items
@@ -34,6 +47,13 @@ const DashboardScreen: React.FC = () => {
         id: doc.id,
         ...doc.data(),
       })) as Item[];
+
+      // Filter items based on selected filter option
+      if (filterOption === 'myPosts' && userId) {
+        itemsList = itemsList.filter(item => item.userId === userId);
+      } else if (filterOption === 'otherPosts' && userId) {
+        itemsList = itemsList.filter(item => item.userId !== userId);
+      }
 
       // Fetch user's favorites from Firestore and reflect that in the items list
       if (userId) {
@@ -55,7 +75,7 @@ const DashboardScreen: React.FC = () => {
 
     // Cleanup listener on component unmount
     return () => unsubscribe();
-  }, [userId]); // Re-run the effect when userId changes
+  }, [userId, filterOption]);
 
   // Handle Toggle Favorite functionality
   const handleToggleFavorite = async (itemId: string) => {
@@ -136,6 +156,44 @@ const DashboardScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Greeting Text */}
+      <Text style={styles.greeting}>Hello, {userName}</Text>
+
+      {/* Search Bar and Filter Icon */}
+      <View style={styles.searchContainer}>
+        <TextInput style={styles.searchInput} placeholder="Search for items..." />
+        <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
+          <Ionicons name="filter" size={24} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity onPress={() => setFilterModalVisible(false)} style={styles.modalCloseButton}>
+              <Ionicons name="close" size={24} color="black" />
+            </TouchableOpacity>
+
+            <Text style={styles.modalTitle}>Filter Posts</Text>
+            <TouchableOpacity onPress={() => { setFilterOption('all'); setFilterModalVisible(false); }} style={styles.modalOption}>
+              <Text>All Posts</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setFilterOption('myPosts'); setFilterModalVisible(false); }} style={styles.modalOption}>
+              <Text>My Posts</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setFilterOption('otherPosts'); setFilterModalVisible(false); }} style={styles.modalOption}>
+              <Text>Other Users' Posts</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <FlatList
         data={items}
         keyExtractor={(item) => item.id}
@@ -215,22 +273,64 @@ const DashboardScreen: React.FC = () => {
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
-    paddingHorizontal: 10,
+    padding: 20,
+    backgroundColor: "#f5f5f5",
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingLeft: 10,
+    marginRight: 10,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    width: 300,
+  },
+  modalCloseButton: {
+    alignSelf: "flex-end",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+  },
+  modalOption: {
+    paddingVertical: 10,
   },
   postCard: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
+    backgroundColor: "white",
     padding: 15,
-    marginVertical: 10,
+    borderRadius: 10,
+    marginBottom: 20,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   userInfo: {
     flexDirection: "row",
@@ -238,9 +338,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   profilePic: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     marginRight: 10,
   },
   userName: {
@@ -250,78 +350,68 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 5,
+    marginTop: 10,
   },
   postImage: {
     width: "100%",
     height: 200,
     borderRadius: 10,
-    marginBottom: 10,
+    marginVertical: 10,
   },
   description: {
     fontSize: 14,
-    color: "#333",
-    marginBottom: 10,
+    color: "#555",
   },
   swapText: {
     fontSize: 14,
-    color: "#666",
-    marginBottom: 15,
+    fontStyle: "italic",
+    marginTop: 10,
   },
   highlight: {
     fontWeight: "bold",
-    color: "#007bff",
+    color: "blue",
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-  },
-  favoriteButton: {
-    flexDirection: "row",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    flex: 1,
-    marginHorizontal: 5,
-    justifyContent: "center",
-  },
-  favorited: {
-    backgroundColor: "green",
-  },
-  notFavorited: {
-    backgroundColor: "red",
-  },
-  swapButton: {
-    flexDirection: "row",
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    flex: 1,
-    marginHorizontal: 5,
-    justifyContent: "center",
-  },
-  button: {
-    flexDirection: "row",
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    flex: 1,
-    marginHorizontal: 5,
-    justifyContent: "center",
+    marginTop: 15,
   },
   editDeleteButtons: {
     flexDirection: "row",
-    justifyContent: "center",
+  },
+  button: {
+    backgroundColor: "#007bff",
+    flexDirection: "row",
     alignItems: "center",
-    width: "100%",
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginRight: 10,
   },
   buttonText: {
     color: "white",
     marginLeft: 5,
-    fontSize: 14,
+  },
+  favoriteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ff5733",
+    borderRadius: 20,
+    padding: 10,
+    marginRight: 10,
+  },
+  favorited: {
+    backgroundColor: "#ff5733",
+  },
+  notFavorited: {
+    backgroundColor: "#ccc",
+  },
+  swapButton: {
+    backgroundColor: "#4CAF50",
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 20,
+    padding: 10,
   },
 });
 
