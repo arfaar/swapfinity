@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, Alert, TextInput, Modal } from "react-native";
-import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, deleteDoc, onSnapshot, addDoc } from "firebase/firestore";
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
@@ -83,24 +83,69 @@ const DashboardScreen: React.FC = () => {
 
   // Handle Swap Request
   const handleSwapRequest = async (itemId: string) => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+
+    console.log("userName:", userName);
+
+     // Debugging the values before proceeding
+      console.log("userId:", userId);
+      console.log("itemId:", itemId);
+      
+
     if (!userId) {
       Alert.alert("Error", "You need to be logged in to send a swap request.");
       return;
     }
 
     try {
-      // Simulate sending swap request (in the future, you can send a real-time notification here)
-      const itemRef = doc(FIREBASE_DB, "items", itemId);
-      await updateDoc(itemRef, {
-        swapRequested: true, // Mark that a swap request was sent
-      });
 
-      // Update item state locally
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, swapRequested: true } : item
-        )
-      );
+      // Fetch the post document based on itemId
+    const postRef = doc(FIREBASE_DB, "items", itemId);
+    const postDoc = await getDoc(postRef);
+
+    if (!postDoc.exists()) {
+      Alert.alert("Error", "Post not found.");
+      return;
+    }
+
+    // Extract the receiverID from the post
+    const receiverId = postDoc.data()?.userId; // Assuming the field for the user ID in the post is `userId`
+    console.log("receiverId:", receiverId);
+
+    if (!receiverId) {
+      Alert.alert("Error", "Receiver ID not found.");
+      return;
+    }
+
+       // Create the notification message
+      const notificationMessage = ` Hi, ${userName} requests to swap an item`;
+
+      // Get the current timestamp
+      const timestamp = new Date().toISOString();
+
+      // Save the notification in Firestore
+    await addDoc(collection(FIREBASE_DB, "notifications"), {
+      message: notificationMessage,
+      messageStatus: "unread", // Initial status is unread
+      postID: itemId,
+      receiverID: receiverId,
+      senderID: userId,
+      swapStatus: "pending", // Initial swap status
+      timestamp: timestamp,
+    });
+
+      // const itemRef = doc(FIREBASE_DB, "items", itemId);
+      // await updateDoc(itemRef, {
+      //   swapRequested: true, // Mark that a swap request was sent
+      // });
+
+      // // Update item state locally
+      // setItems((prevItems) =>
+      //   prevItems.map((item) =>
+      //     item.id === itemId ? { ...item, swapRequested: true } : item
+      //   )
+      // );
 
       Alert.alert("Swap Request Sent", "The swap request has been sent to the other user.");
     } catch (error) {
