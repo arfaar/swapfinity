@@ -10,6 +10,7 @@ import MyTabs from "./screens/BottomNavigation";
 import FavouritesScreen from "./screens/FavouritesScreen";
 import { ActivityIndicator, View } from "react-native";
 import ChatScreen from "./screens/ChatScreen";
+import IndividualChats from './screens/IndividualChats'
 
 // Define stack parameters
 export type RootStackParamList = {
@@ -17,7 +18,8 @@ export type RootStackParamList = {
   Registration: undefined;
   Home: undefined;
   Favorites: undefined;
-  Chats: undefined
+  Chats: undefined;
+  IndividualChats: undefined
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -51,6 +53,7 @@ export default function Index() {
       <Stack.Screen name="Home" component={MyTabs} options={{ headerShown: false }} />
       <Stack.Screen name="Favorites" component={FavouritesScreen} />
       <Stack.Screen name="Chats" component={ChatScreen} />
+      <Stack.Screen name="IndividualChats" component={IndividualChats} />
     </Stack.Navigator>
   );
 }
