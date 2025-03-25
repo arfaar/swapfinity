@@ -17,6 +17,7 @@ interface Item {
   userProfilePic?: string;
   whatTheyAreLookingFor?: string;
   isFavorited?: boolean;
+  swapRequested?: boolean;
 }
 
 const DashboardScreen: React.FC = () => {
@@ -79,6 +80,34 @@ const DashboardScreen: React.FC = () => {
     // Cleanup listener on component unmount
     return () => unsubscribe();
   }, [userId, filterOption]);
+
+  // Handle Swap Request
+  const handleSwapRequest = async (itemId: string) => {
+    if (!userId) {
+      Alert.alert("Error", "You need to be logged in to send a swap request.");
+      return;
+    }
+
+    try {
+      // Simulate sending swap request (in the future, you can send a real-time notification here)
+      const itemRef = doc(FIREBASE_DB, "items", itemId);
+      await updateDoc(itemRef, {
+        swapRequested: true, // Mark that a swap request was sent
+      });
+
+      // Update item state locally
+      setItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, swapRequested: true } : item
+        )
+      );
+
+      Alert.alert("Swap Request Sent", "The swap request has been sent to the other user.");
+    } catch (error) {
+      console.error("Error sending swap request:", error);
+      Alert.alert("Error", "Failed to send the swap request.");
+    }
+  };
 
   // Handle Toggle Favorite functionality
   const handleToggleFavorite = async (itemId: string) => {
@@ -265,11 +294,14 @@ const DashboardScreen: React.FC = () => {
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.swapButton}
-                    onPress={() => Alert.alert("Swap Request Sent", "Feature coming soon!")}
+                    style={[styles.swapButton, item.swapRequested ? styles.swapButtonSent : null]}
+                    onPress={() => handleSwapRequest(item.id)}
+                    disabled={item.swapRequested} // Disable if request is already sent
                   >
                     <Ionicons name="swap-horizontal" size={20} color="white" />
-                    <Text style={styles.buttonText}>Swap Request</Text>
+                    <Text style={styles.buttonText}>
+                    {item.swapRequested ? "Request Sent" : "Swap Request"}
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -421,6 +453,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 20,
     padding: 10,
+  },
+  swapButtonSent: {
+    backgroundColor: "#006400",
+    opacity: 0.7, 
+  },
+  swapButtonDisabled: {
+    backgroundColor: "#ccc",
   },
 });
 
