@@ -4,6 +4,7 @@ import { collection, getDocs, doc, updateDoc, getDoc, arrayUnion, arrayRemove, d
 import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { getAuth } from "firebase/auth";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "expo-router";
 
 // Define item type
 interface Item {
@@ -25,6 +26,8 @@ const DashboardScreen: React.FC = () => {
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false); // State for modal visibility
   const [filterOption, setFilterOption] = useState<string>('all'); // Filter option (all, my posts, other posts)
 
+  const navigation = useNavigation();
+  
   useEffect(() => {
     const auth = getAuth();
     if (auth.currentUser) {
@@ -154,6 +157,11 @@ const DashboardScreen: React.FC = () => {
     Alert.alert("Edit Post", "Navigate to edit screen (not implemented).");
   };
 
+   // Navigate to Explore Screen when search bar is pressed
+   const handleSearchBarPress = () => {
+    navigation.navigate("Explore"); // Navigate to Explore Screen
+  };
+
   return (
     <View style={styles.container}>
       {/* Greeting Text */}
@@ -161,7 +169,7 @@ const DashboardScreen: React.FC = () => {
 
       {/* Search Bar and Filter Icon */}
       <View style={styles.searchContainer}>
-        <TextInput style={styles.searchInput} placeholder="Search for items..." />
+        <TextInput style={styles.searchInput} placeholder="Search for items..."  onFocus={handleSearchBarPress}  />
         <TouchableOpacity onPress={() => setFilterModalVisible(true)}>
           <Ionicons name="filter" size={24} color="black" />
         </TouchableOpacity>
