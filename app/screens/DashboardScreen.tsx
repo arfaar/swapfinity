@@ -378,15 +378,16 @@ const styles = StyleSheet.create({
   },
   editDeleteButtons: {
     flexDirection: "row",
+    gap: 10
   },
   button: {
-    backgroundColor: "#007bff",
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#007bff",
+    padding: 10,
     borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    marginRight: 10,
+    width: "49%",
   },
   buttonText: {
     color: "white",
