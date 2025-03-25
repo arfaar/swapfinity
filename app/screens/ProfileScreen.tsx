@@ -105,6 +105,11 @@ const ProfileScreen = ({ navigation }: any) => {
     if (userRef) await updateDoc(userRef, { profilePicture: null }); // Remove the profile picture from Firestore
   };
 
+  const handleLogOut = () => {
+    signOut(auth);
+    navigation.navigate("Login"); // Navigate to Login Screen
+  };
+
   return (
     <View style={styles.container}>
       {/* Profile Picture */}
@@ -192,7 +197,7 @@ const ProfileScreen = ({ navigation }: any) => {
       </View>
 
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={() => signOut(auth)}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogOut}>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </View>
