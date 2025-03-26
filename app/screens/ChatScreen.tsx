@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, Image } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 
@@ -20,10 +20,19 @@ const ChatsScreen = () => {
         );
 
         const querySnapshot = await getDocs(q);
-        const chatData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const chatData = await Promise.all(
+          querySnapshot.docs.map(async (docSnap) => {
+            const chat = { id: docSnap.id, ...docSnap.data() };
+            const otherUserId = chat.participants.find((id: string) => id !== userId);
+            
+            // Fetch sender details
+            const userDoc = await getDoc(doc(FIREBASE_DB, 'users', otherUserId));
+            const senderData = userDoc.exists() ? userDoc.data() : { name: "Unknown", profilePic: null };
+
+            return { ...chat, senderName: senderData.name, profilePicture: senderData.profilePicture };
+          })
+        );
+
         setChats(chatData);
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -40,8 +49,18 @@ const ChatsScreen = () => {
         data={chats}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => navigation.navigate('IndividualChats', { chatID: item.id })} style={styles.chatItem}>
-            <Text>{item.participants.find((id: string) => id !== userId)}</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('IndividualChats', { chatID: item.id, senderName: item.senderName })} 
+            style={styles.chatItem}
+          >
+            <Image 
+              source={item.profilePicture ? { uri: item.profilePicture } : require('../../assets/images/default-profile-pic.jpg')} 
+              style={styles.profileImage} 
+            />
+            <View style={styles.chatTextContainer}>
+              <Text style={styles.chatName}>{item.senderName}</Text>
+              <Text style={styles.lastMessage}>{item.lastMessage || "Hi, I want to swap the item."}</Text>
+            </View>
           </TouchableOpacity>
         )}
       />
@@ -61,6 +80,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   chatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
     padding: 15,
     borderRadius: 10,
@@ -70,6 +91,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  chatTextContainer: {
+    flex: 1,
+  },
+  chatName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  lastMessage: {
+    fontSize: 14,
+    color: 'gray',
+    marginTop: 5,
   },
 });
 
