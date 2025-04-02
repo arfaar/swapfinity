@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, query, where, getDocs, orderBy, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 
@@ -25,6 +25,10 @@ const NotificationsScreen = () => {
             id: doc.id,
             ...doc.data(),
           }));
+          
+           // Log the notifications data to see if receiverName exists
+          console.log(notificationsData);
+
           setNotifications(notificationsData);
         } catch (error) {
           console.error("Error fetching notifications:", error);
@@ -55,6 +59,44 @@ const NotificationsScreen = () => {
       navigation.navigate("Chats", { chatID, senderID, senderName });
     } catch (error) {
       console.error("Error opening chat:", error);
+    }
+  };
+
+  // Handle approve or reject action
+  const handleSwapResponse = async (notification: any, response: 'approved' | 'rejected') => {
+    const { senderID, senderName, receiverID, receiverName, postID } = notification;
+
+    // Update the notification with the swapStatus (approved/rejected)
+    try {
+      const notificationRef = doc(FIREBASE_DB, 'notifications', notification.id);
+      await updateDoc(notificationRef, {
+        swapStatus: response,
+        messageStatus: 'read',
+      });
+
+      // Notify the sender with the response message
+      const message = response === 'approved' 
+        ? `YAY! ${receiverName} has accepted your request. Chat for more details.` 
+        : `Sorry, ${receiverName} has rejected your request.`;
+
+      // Optionally, you could create a new notification for the sender to notify them of the response
+      const senderNotificationRef = collection(FIREBASE_DB, 'notifications');
+      await setDoc(doc(senderNotificationRef), {
+        senderID,
+        senderName: senderName, 
+        receiverID,
+        receiverName: receiverName,
+        swapStatus: response,
+        messageStatus: 'unread',
+        postID,
+        timestamp: new Date(),
+        message,
+      });
+
+      // Provide feedback to the user
+      Alert.alert('Swap Response', message);
+    } catch (error) {
+      console.error("Error updating notification:", error);
     }
   };
 
@@ -92,6 +134,7 @@ const NotificationsScreen = () => {
         </TouchableOpacity>
       </View>
 
+
       {/* Notifications List */}
       <FlatList
         data={notifications}
@@ -100,9 +143,32 @@ const NotificationsScreen = () => {
           <View style={styles.itemContainer}>
             <TouchableOpacity onPress={() => handleOpenChat(item)} style={styles.textContainer}>
               <Text style={styles.itemText}>
-                {item.senderName ? `${item.senderName} wants to swap an item with you.` : "Unknown wants to swap an item with you."}
+                {item.senderName && item.itemName 
+                  ? `${item.senderName} wants to swap "${item.itemName}" with you for "${item.itemLookingFor}".` 
+                  : "Unknown wants to swap an item with you."
+                }
               </Text>
             </TouchableOpacity>
+
+            {/* Approve/Reject Buttons */}
+            {item.swapStatus === 'pending' && (
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity 
+                  style={styles.acceptButton} 
+                  onPress={() => handleSwapResponse(item, 'approved')}
+                >
+                  <Text style={styles.buttonText}>Approve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.rejectButton} 
+                  onPress={() => handleSwapResponse(item, 'rejected')}
+                >
+                  <Text style={styles.buttonText}>Reject</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Delete Button */}
             <TouchableOpacity onPress={() => handleDeleteNotification(item.id)}>
               <Ionicons name="close" size={20} color="red" />
             </TouchableOpacity>
@@ -148,6 +214,24 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  acceptButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+  },
+  rejectButton: {
+    backgroundColor: '#F44336',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
