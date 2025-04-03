@@ -27,6 +27,13 @@ const DashboardScreen: React.FC = () => {
   const [filterModalVisible, setFilterModalVisible] = useState<boolean>(false); // State for modal visibility
   const [filterOption, setFilterOption] = useState<string>('all'); // Filter option (all, my posts, other posts)
 
+  // For edit function 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [lookingFor, setLookingFor] = useState("");
+
   const navigation = useNavigation();
   
   useEffect(() => {
@@ -207,6 +214,34 @@ const DashboardScreen: React.FC = () => {
     }
   };
 
+  // Handle Edit Post
+   const handleEditPost = (item: Item) => {
+    setSelectedItem(item);
+    setTitle(item.title);
+    setDescription(item.description);
+    setLookingFor(item.whatTheyAreLookingFor);
+    setModalVisible(true);
+  };
+
+  const handleSaveChanges = async () => {
+    if (!selectedItem) return;
+    try {
+      const postRef = doc(FIREBASE_DB, "items", selectedItem.id);
+      await updateDoc(postRef, {
+        title,
+        description,
+        lookingFor,
+      });
+      Alert.alert("Success", "Post updated successfully!");
+      setModalVisible(false);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      Alert.alert("Error", "Failed to update the post.");
+    }
+  };
+
+
+
   // Handle Delete Post
   const handleDeletePost = async (itemId: string) => {
     Alert.alert("Confirm Deletion", "Are you sure you want to delete this post?", [
@@ -230,10 +265,6 @@ const DashboardScreen: React.FC = () => {
         },
       },
     ]);
-  };
-
-  const handleEditPost = (itemId: string) => {
-    Alert.alert("Edit Post", "Navigate to edit screen (not implemented).");
   };
 
    // Navigate to Explore Screen when search bar is pressed
@@ -315,11 +346,30 @@ const DashboardScreen: React.FC = () => {
                 <View style={styles.editDeleteButtons}>
                   <TouchableOpacity
                     style={styles.button}
-                    onPress={() => handleEditPost(item.id)}
+                    onPress={() => handleEditPost(item)}
                   >
                     <Ionicons name="pencil" size={20} color="white" />
                     <Text style={styles.buttonText}>Edit</Text>
                   </TouchableOpacity>
+
+                  <Modal animationType="slide" transparent={true} visible={modalVisible}>
+                    <View style={styles.editmodalContainer}>
+                    <View style={styles.editmodalContent}>
+                    <Text style={styles.label}>Title:</Text>
+                    <TextInput style={styles.input} value={title} onChangeText={setTitle} />
+                    <Text style={styles.label}>Description:</Text>
+                    <TextInput style={styles.input} value={description} onChangeText={setDescription} multiline />
+                    <Text style={styles.label}>Looking For:</Text>
+                    <TextInput style={styles.input} value={lookingFor} onChangeText={setLookingFor} />
+                    <TouchableOpacity style={styles.saveChangesButton} onPress={handleSaveChanges}>
+                      <Text style={styles.editbuttonText}>Save Changes</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                      <Text style={styles.closeButtonText}>Close</Text>
+                    </TouchableOpacity>
+                    </View>
+                    </View>
+                  </Modal>
 
                   <TouchableOpacity
                     style={styles.button}
@@ -329,6 +379,7 @@ const DashboardScreen: React.FC = () => {
                     <Text style={styles.buttonText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
+                
               ) : (
                 <>
                   <TouchableOpacity
@@ -511,6 +562,29 @@ const styles = StyleSheet.create({
   swapButtonDisabled: {
     backgroundColor: "#ccc",
   },
+  //Edit block Style
+  editcontainer: { flex: 1, padding: 20 },
+  editmodalContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" },
+  editmodalContent: { width: "90%", backgroundColor: "white", padding: 20, borderRadius: 10 },
+  label: { fontSize: 16, fontWeight: "bold", marginTop: 10 },
+  input: { borderBottomWidth: 1, padding: 10, marginBottom: 20 },
+  editeditbutton: { backgroundColor: "blue", padding: 15, alignItems: "center", borderRadius: 10, marginTop: 10 },
+  editbuttonText: { color: "white", fontSize: 16 },
+  closeButton: { marginTop: 10, alignItems: "center" },
+  closeButtonText: { color: "red", fontSize: 16 },
+  postContainer: { padding: 20, backgroundColor: "#f8f8f8", borderRadius: 10, marginTop: 20 },
+  postTitle: { fontSize: 18, fontWeight: "bold" },
+  editButton: { marginTop: 10, backgroundColor: "green", padding: 10, borderRadius: 5, flexDirection: "row", alignItems: "center" },
+  saveChangesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "green",
+    padding: 10,
+    borderRadius: 20,
+    width: "100%",
+    alignSelf: "center" 
+  }
 });
 
 export default DashboardScreen;
