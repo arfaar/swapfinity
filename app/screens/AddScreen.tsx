@@ -5,6 +5,7 @@ import { FIREBASE_DB, FIREBASE_AUTH } from "../../firebaseConfig";
 import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { Picker } from '@react-native-picker/picker';
 
 const AddScreen = ({ navigation }: any) => {
   const [title, setTitle] = useState("");
@@ -14,6 +15,10 @@ const AddScreen = ({ navigation }: any) => {
   const [userName, setUserName] = useState("Anonymous");
   const [userProfilePic, setUserProfilePic] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+
+  // Define categories
+  const categories = ["Books", "Small Appliances", "Toys", "Accessories", "Others"];
+  const [category, setCategory] = useState(categories[0]); // Default category
 
   const auth = getAuth(); // Get Firebase Auth instance
 
@@ -64,6 +69,7 @@ const AddScreen = ({ navigation }: any) => {
         description,
         whatTheyAreLookingFor,
         image,
+        category,
         postedAt: new Date(),
         userId, // Store user ID
         userName, // Store user's name
@@ -87,6 +93,18 @@ const AddScreen = ({ navigation }: any) => {
     <View style={styles.container}>
       <Text style={styles.label}>Title:</Text>
       <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Enter title" />
+
+      <Text style={styles.label}>Category:</Text>
+      <View style={styles.pickerContainer}>
+      <Picker
+        selectedValue={category}
+        onValueChange={(itemValue) => setCategory(itemValue)}
+      >
+        {categories.map((cat, index) => (
+        <Picker.Item key={index} label={cat} value={cat} />
+        ))}
+      </Picker>
+      </View>
 
       <Text style={styles.label}>Image:</Text>
       <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>

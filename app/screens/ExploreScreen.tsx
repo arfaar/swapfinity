@@ -21,6 +21,7 @@ const ExploreScreen: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState({});
 
   const navigation = useNavigation();
 
@@ -36,6 +37,25 @@ const ExploreScreen: React.FC = () => {
     };
 
     fetchItems();
+  }, []);
+
+  //Categorize the different items
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const querySnapshot = await getDocs(collection(FIREBASE_DB, "items"));
+      const counts = { Books: 0, "Small Appliances": 0, Toys: 0, Accessories: 0, Others: 0 };
+  
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (counts[data.category] !== undefined) {
+          counts[data.category]++;
+        }
+      });
+  
+      setCategoryCounts(counts);
+    };
+  
+    fetchCategories();
   }, []);
 
   // Filter items based on search query
@@ -60,7 +80,14 @@ const ExploreScreen: React.FC = () => {
       />
 
       {filteredItems.length === 0 ? (
-        <Text style={styles.noMatchesText}>No matches found :(</Text>
+        // <Text style={styles.noMatchesText}>No matches found :(</Text>
+        <View style={styles.categoryContainer}>
+          {Object.keys(categoryCounts).map((cat) => (
+            <View key={cat} style={styles.categoryItem}>
+            <Text>{cat} ({categoryCounts[cat]})</Text>
+            </View>
+          ))}
+        </View>
       ) : (
         <FlatList
           data={filteredItems}
@@ -166,6 +193,25 @@ const styles = StyleSheet.create({
   highlight: {
     fontWeight: "bold",
     color: "blue",
+  },
+  categoryContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginVertical: 10,
+  },
+  categoryItem: {
+    backgroundColor: "#007bff", // Blue background
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    margin: 5,
+    alignItems: "center",
+  },
+  categoryText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
 
