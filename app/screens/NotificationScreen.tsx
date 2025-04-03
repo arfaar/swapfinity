@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { collection, query, where, getDocs, orderBy, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, setDoc, deleteDoc, updateDoc, onSnapshot, getDoc } from 'firebase/firestore';
 import { FIREBASE_DB, FIREBASE_AUTH } from '../../firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 
@@ -62,43 +62,55 @@ const NotificationsScreen = () => {
     }
   };
 
+  const [disabledButtons, setDisabledButtons] = useState<{ [key: string]: boolean }>({});
+
   // Handle approve or reject action
   const handleSwapResponse = async (notification: any, response: 'approved' | 'rejected') => {
     const { senderID, senderName, receiverID, receiverName, postID } = notification;
-
-    // Update the notification with the swapStatus (approved/rejected)
+  
     try {
+       // Disable buttons for this notification
+      setDisabledButtons(prevState => ({ ...prevState, [notification.id]: true }));
+
+      // Fetch the item details from the 'items' collection
+      const itemRef = doc(FIREBASE_DB, "items", postID);
+      const itemSnap = await getDoc(itemRef);
+      const itemData = itemSnap.exists() ? itemSnap.data() : null;
+      const itemTitle = itemData ? itemData.title : "No Item"; 
+
+    
       const notificationRef = doc(FIREBASE_DB, 'notifications', notification.id);
       await updateDoc(notificationRef, {
         swapStatus: response,
-        messageStatus: 'read',
+        messageStatus: 'read',  // Marking John's notification as read
       });
-
-      // Notify the sender with the response message
+  
+      // Notify Mary (sender) about the response
       const message = response === 'approved' 
         ? `YAY! ${receiverName} has accepted your request. Chat for more details.` 
         : `Sorry, ${receiverName} has rejected your request.`;
-
-      // Optionally, you could create a new notification for the sender to notify them of the response
+  
       const senderNotificationRef = collection(FIREBASE_DB, 'notifications');
       await setDoc(doc(senderNotificationRef), {
-        senderID,
-        senderName: senderName, 
-        receiverID,
-        receiverName: receiverName,
+        senderID: receiverID, // Swap sender & receiver so Mary gets the message
+        senderName: receiverName,
+        receiverID: senderID, // Send the response to Mary
+        receiverName: senderName,
         swapStatus: response,
         messageStatus: 'unread',
         postID,
+        itemTitle,
         timestamp: new Date(),
         message,
       });
-
-      // Provide feedback to the user
-      Alert.alert('Swap Response', message);
+  
+      // Provide feedback to John
+      Alert.alert('Swap Response', `You have ${response} the request.`);
     } catch (error) {
       console.error("Error updating notification:", error);
     }
   };
+  
 
   // Handle deleting a notification
   const handleDeleteNotification = async (notificationId: string) => {
@@ -123,60 +135,73 @@ const NotificationsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerText}>
-          Notifications {notifications.length > 0 && `(${notifications.length})`}
-        </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Chats')}>
-          <Ionicons name="chatbubble-ellipses-outline" size={24} color="black" />
-        </TouchableOpacity>
-      </View>
+  <View style={styles.container}>
+    {/* Header */}
+    <View style={styles.header}>
+      <Text style={styles.headerText}>
+        Notifications {notifications.length > 0 && `(${notifications.length})`}
+      </Text>
+      <TouchableOpacity onPress={() => navigation.navigate('Chats')}>
+        <Ionicons name="chatbubble-ellipses-outline" size={24} color="black" />
+      </TouchableOpacity>
+    </View>
 
+    {/* Swap Requests */}
+    <Text style={styles.sectionTitle}>Swap Requests</Text>
+    <FlatList
+      data={notifications.filter((item) => item.swapStatus === 'pending')}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.itemContainer}>
+          <TouchableOpacity style={styles.textContainer}>
+            <Text style={styles.itemText}>
+              {item.senderName
+                ? `${item.senderName} wants to swap with you.`
+                : "User wants to swap an item with you."}
+            </Text>
+          </TouchableOpacity>
 
-      {/* Notifications List */}
-      <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.itemContainer}>
-            <TouchableOpacity onPress={() => handleOpenChat(item)} style={styles.textContainer}>
-              <Text style={styles.itemText}>
-                {item.senderName && item.itemName 
-                  ? `${item.senderName} wants to swap "${item.itemName}" with you for "${item.itemLookingFor}".` 
-                  : "Unknown wants to swap an item with you."
-                }
-              </Text>
+          {/* Approve/Reject Buttons */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={[styles.acceptButton, disabledButtons[item.id] && styles.disabledButton]}
+              onPress={() => handleSwapResponse(item, 'approved')}
+              disabled={disabledButtons[item.id]}
+            >
+              <Text style={styles.buttonText}>Approve</Text>
             </TouchableOpacity>
-
-            {/* Approve/Reject Buttons */}
-            {item.swapStatus === 'pending' && (
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity 
-                  style={styles.acceptButton} 
-                  onPress={() => handleSwapResponse(item, 'approved')}
-                >
-                  <Text style={styles.buttonText}>Approve</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.rejectButton} 
-                  onPress={() => handleSwapResponse(item, 'rejected')}
-                >
-                  <Text style={styles.buttonText}>Reject</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Delete Button */}
-            <TouchableOpacity onPress={() => handleDeleteNotification(item.id)}>
-              <Ionicons name="close" size={20} color="red" />
+            <TouchableOpacity 
+              style={[styles.rejectButton, disabledButtons[item.id] && styles.disabledButton]}
+              onPress={() => handleSwapResponse(item, 'rejected')}
+              disabled={disabledButtons[item.id]}
+            >
+              <Text style={styles.buttonText}>Reject</Text>
             </TouchableOpacity>
           </View>
-        )}
-      />
-    </View>
-  );
+        </View>
+      )}
+    />
+
+    {/* General Notifications */}
+    <Text style={styles.sectionTitle}>Other Notifications</Text>
+    <FlatList
+      data={notifications.filter((item) => item.swapStatus !== 'pending')}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View style={styles.itemContainer}>
+          <TouchableOpacity onPress={() => handleOpenChat(item)} style={styles.textContainer}>
+            <Text style={styles.itemText}>{item.message || "New notification"}</Text>
+          </TouchableOpacity>
+          {/* Delete Button */}
+          <TouchableOpacity onPress={() => handleDeleteNotification(item.id)}>
+            <Ionicons name="close" size={20} color="red" />
+          </TouchableOpacity>
+        </View>
+      )}
+    />
+  </View>
+);
+
 };
 
 const styles = StyleSheet.create({
@@ -232,6 +257,10 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc', // Greyed out effect
+    opacity: 0.4
   },
 });
 
