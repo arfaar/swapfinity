@@ -27,6 +27,10 @@ const ExploreScreen: React.FC = () => {
 
   const navigation = useNavigation();
 
+  const handlePress = (item: Item) => {
+    navigation.navigate('Dashboard');
+  };
+
   useEffect(() => {
     const fetchItems = async () => {
       const itemsSnapshot = await getDocs(collection(FIREBASE_DB, "items"));
@@ -97,7 +101,7 @@ const ExploreScreen: React.FC = () => {
         onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
         >
         <Text style={styles.categoryText}>{cat} ({categoryCounts[cat]})</Text>
-          </TouchableOpacity>
+      </TouchableOpacity>
         ))}
       </View>
 
@@ -105,6 +109,7 @@ const ExploreScreen: React.FC = () => {
         data={filteredItems}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handlePress(item)}>
           <View style={styles.postCard}>
       
             <View style={styles.userInfo}>
@@ -125,6 +130,7 @@ const ExploreScreen: React.FC = () => {
               Looking for: <Text style={styles.highlight}>{item.whatTheyAreLookingFor}</Text>
             </Text>
           </View>
+          </TouchableOpacity>
         )}
       />
     
