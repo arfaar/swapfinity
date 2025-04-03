@@ -346,7 +346,7 @@ const DashboardScreen: React.FC = () => {
                   <TouchableOpacity
                     style={[styles.swapButton, item.swapRequested ? styles.swapButtonSent : null]}
                     onPress={() => handleSwapRequest(item.id)}
-                    disabled={item.swapRequested} // Disable if request is already sent
+                    disabled={item.swapRequested} 
                   >
                     <Ionicons name="swap-horizontal" size={20} color="white" />
                     <Text style={styles.buttonText}>
