@@ -275,7 +275,7 @@ const DashboardScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Greeting Text */}
-      <Text style={styles.greeting}>Hello, {userName}</Text>
+      <Text style={styles.greeting}>Hello, {userName} 👋🏻</Text>
 
       {/* Search Bar and Filter Icon */}
       <View style={styles.searchContainer}>
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: 'rgba(136, 181, 134, 0.7)'
   },
   greeting: {
     fontSize: 24,
@@ -429,6 +429,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
+    
   },
   searchInput: {
     flex: 1,
@@ -438,12 +439,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingLeft: 10,
     marginRight: 10,
+    backgroundColor: 'rgba(255, 255, 255, 1)'
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   modalContent: {
     backgroundColor: "white",
@@ -463,15 +465,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   postCard: {
-    backgroundColor: "white",
-    padding: 15,
+    // backgroundColor: 'rgba(226, 116, 41, 0.7)',
+    backgroundColor: "rgba(75, 131, 82, 1)",
+    padding: 17,
     borderRadius: 10,
     marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-    elevation: 5,
   },
   userInfo: {
     flexDirection: "row",
@@ -546,7 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ff5733",
   },
   notFavorited: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#4CAF50",
   },
   swapButton: {
     backgroundColor: "#4CAF50",

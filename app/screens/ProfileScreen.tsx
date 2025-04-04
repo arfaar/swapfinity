@@ -205,7 +205,7 @@ const ProfileScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f8f9fa" },
+  container: { flex: 1, padding: 20,  backgroundColor: 'rgba(136, 181, 134, 0.7)' },
   profileImageContainer: { alignItems: "center", marginBottom: 20, position: "relative" },
   profileImageWrapper: { justifyContent: "center", alignItems: "center" },
   profileImage: { width: 100, height: 100, borderRadius: 50 },

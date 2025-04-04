@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+     backgroundColor: 'rgba(136, 181, 134, 0.7)'
   },
   header: {
     flexDirection: 'row',
@@ -220,6 +220,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
+  sectionTitle : {
+    fontSize: 18,
+    fontStyle: "italic", 
+    textAlign: "center"
+  }
+  ,
   itemContainer: {
     backgroundColor: 'white',
     padding: 15,

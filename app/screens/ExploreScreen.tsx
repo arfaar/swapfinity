@@ -142,15 +142,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: 'rgba(136, 181, 134, 0.7)'
   },
   searchInput: {
     height: 40,
-    borderColor: "#ccc",
-    borderWidth: 1,
+    borderColor: "white",
+    borderWidth: 2,
     borderRadius: 20,
     paddingLeft: 10,
     marginBottom: 20,
+      backgroundColor: 'white'
   },
   noMatchesText: {
     fontSize: 16,

@@ -125,18 +125,23 @@ const AddScreen = ({ navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f8f9fa" },
+  container: { flex: 1, padding: 17, backgroundColor: "'rgba(136, 181, 134, 0.5)'" },
   label: { fontSize: 16, fontWeight: "bold", marginTop: 10 },
   input: {
-    borderBottomWidth: 1,
-    borderColor: "#ccc",
+    borderBottomWidth: 2,
+    borderColor: "white",
     fontSize: 16,
     paddingVertical: 5,
     marginBottom: 15,
   },
+  pickerContainer:{
+    borderColor: "white",
+    borderBottomWidth: 2,
+  }
+  ,
   imagePicker: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    borderWidth: 2,
+    borderColor: "white",
     height: 200,
     justifyContent: "center",
     alignItems: "center",
@@ -149,7 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   postButton: {
-    backgroundColor: "#007bff",
+    backgroundColor: "green",
     padding: 10,
     borderRadius: 5,
     alignItems: "center",
