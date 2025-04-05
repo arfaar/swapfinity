@@ -149,9 +149,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
     paddingHorizontal: 10,
+    backgroundColor: "rgba(136, 181, 134, 0.7)",
+
   },
   postCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
     borderRadius: 10,
     padding: 15,
     marginVertical: 10,

@@ -118,7 +118,7 @@ const ProfileScreen = ({ navigation }: any) => {
           {profilePicture ? (
             <Image source={{ uri: profilePicture }} style={styles.profileImage} />
           ) : (
-            <Ionicons name="person-circle-outline" size={80} color="gray" />
+            <Ionicons name="person-circle-outline" size={80} color="black" />
           )}
         </TouchableOpacity>
 

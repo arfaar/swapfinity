@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
+import { Image } from 'react-native';
+
 
 
 const LoginScreen = () => {
@@ -64,6 +66,14 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.logoContainer}>
+        <Image
+        source={require('../../assets/images/logo.png')} // or use a URL: { uri: 'https://your-image-url' }
+        style={styles.logo}
+        resizeMode="contain"
+      />
+    </View>
+
       {/* Email Input */}
       <TextInput
         value={email}
@@ -108,9 +118,10 @@ const LoginScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
+    marginHorizontal: 10,
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: '#d4fcd4',
   },
   input: {
     marginVertical: 4,
@@ -136,6 +147,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    borderRadius: 50
+  },
+  
 });
 
 export default LoginScreen;

@@ -466,7 +466,8 @@ const styles = StyleSheet.create({
   },
   postCard: {
     // backgroundColor: 'rgba(226, 116, 41, 0.7)',
-    backgroundColor: "rgba(75, 131, 82, 1)",
+    // backgroundColor: "rgba(75, 131, 82, 1)",
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
     padding: 17,
     borderRadius: 10,
     marginBottom: 20,
@@ -502,8 +503,8 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   description: {
-    fontSize: 14,
-    color: "#555",
+    fontSize: 16,
+    color: "black",
   },
   swapText: {
     fontSize: 14,

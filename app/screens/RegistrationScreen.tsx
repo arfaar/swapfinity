@@ -5,6 +5,8 @@ import { setDoc, doc } from 'firebase/firestore';
 import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebaseConfig';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../index'; 
+import { Image } from 'react-native';
+
 
 type RegisterScreenProps = NativeStackScreenProps<RootStackParamList, 'Registration'>;
 
@@ -43,6 +45,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.logoContainer}>
+              <Image
+              source={require('../../assets/images/logo.png')} // or use a URL: { uri: 'https://your-image-url' }
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
       <TextInput value={name} style={styles.input} placeholder="Name" onChangeText={setName} />
       <TextInput value={email} style={styles.input} placeholder="Email" autoCapitalize="none" onChangeText={setEmail} />
       <TextInput secureTextEntry value={password} style={styles.input} placeholder="Password" autoCapitalize="none" onChangeText={setPassword} />
@@ -70,6 +79,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     flex: 1,
     justifyContent: 'center',
+    backgroundColor: '#d4fcd4',
   },
   input: {
     marginVertical: 4,
@@ -86,6 +96,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     textDecorationLine: 'underline',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    borderRadius: 50
   },
 });
 

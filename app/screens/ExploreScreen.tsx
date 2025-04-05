@@ -31,6 +31,9 @@ const ExploreScreen: React.FC = () => {
     navigation.navigate('Dashboard');
   };
 
+  
+ 
+
   useEffect(() => {
     const fetchItems = async () => {
       const itemsSnapshot = await getDocs(collection(FIREBASE_DB, "items"));
@@ -64,6 +67,8 @@ const ExploreScreen: React.FC = () => {
     fetchCategories();
   }, []);
 
+  
+
   useEffect(() => {
   if (selectedCategory) {
     setFilteredItems(items.filter(item => item.category === selectedCategory));
@@ -84,7 +89,8 @@ const ExploreScreen: React.FC = () => {
     }
   }, [searchQuery, items]);
 
-  return (
+
+return (
     <View style={styles.container}>
       <TextInput
         style={styles.searchInput}

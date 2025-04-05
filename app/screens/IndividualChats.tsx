@@ -103,7 +103,7 @@ const IndividualChats = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "rgba(136, 181, 134, 0.7)",
     paddingHorizontal: 5, 
     paddingBottom: 10,
   },
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   sender: {
     alignSelf: 'flex-end',
-    backgroundColor: '#0084ff',
+    backgroundColor: 'rgba(0, 132, 255, 0.6)',
   },
   receiver: {
     alignSelf: 'flex-start',
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: "rgba(136, 181, 134, 0.7)",
     padding: 12,
     borderTopWidth: 1,
     borderColor: '#ccc',
